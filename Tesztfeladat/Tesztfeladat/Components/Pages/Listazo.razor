@@ -1,0 +1,252 @@
+﻿@page "/weather"
+@using System.Text.Json
+@using System.Text
+@using Tesztfeladat.Entity.DTOs
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<PageTitle>Mentett nyugtak</PageTitle>
+
+@if (nyugtaNezet)
+{
+    <h1>Mentett nyugtak</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th><p>Keresés Dátum alapján</p></th>
+                <th></th>
+                <th><p>Keresés Sorszám alapján</p></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="datetime-local" @bind="kezdet" @bind:event="oninput"/></td>
+                <td><input type="datetime-local" @bind="veg" @bind:event="oninput"/></td>
+                <td><input type="number" @bind="keresNyugtaSorszam" @bind:event="oninput" /></td>   
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nyugta Sorszám</th>
+                <th>Kiállítás Ideje</th>
+                <th>Összeg</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var nyugta in nyugtaLista)
+            {
+                @if ((nyugta.letrehozas >= kezdet && nyugta.letrehozas <= veg) || nyugta.azonosito == keresNyugtaSorszam)
+            {
+                    <tr>
+                        <td>@nyugta.azonosito</td>
+                        <td>@nyugta.letrehozas</td>
+                        <td>@nyugta.osszeg</td>
+                        <td><button class="btn btn-primary" @onclick="@(f => Reszletezes(nyugta.azonosito ?? 0))">Részletes</button></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <h1>@megjelenitettNyugta számú nyugta</h1>
+    <h2>Kelte @nyugtaLista.Where(x => x.azonosito == megjelenitettNyugta).First().letrehozas</h2>
+    <h2>Összeg: @nyugtaLista.Where(x => x.azonosito == megjelenitettNyugta).First().osszeg</h2>
+
+    @if (nyomtat)
+    {
+        <textarea cols="40" rows=@(nyugtaTetelek.Count()+1) @bind="nyugtaSzoveg" readonly style="font-family: monospace;"></textarea>
+        <button class="btn btn-primary" @onclick="NyomtatasTorlese">Vissza</button>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" @bind="nevSzuro" @bind:event="oninput" /></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tétel Sorszám</th>
+                    <th>Cikknév</th>
+                    <th>Mennyiség</th>
+                    <th>Bruttó egységár</th>
+                    <th>Tételérték</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tetel in nyugtaTetelek)
+                {
+                    @if(String.IsNullOrEmpty(nevSzuro) || tetel.nev.ToLower().Contains(nevSzuro.ToLower()))
+                    {
+                        <tr>
+                            <td>@tetel.sorszam</td>
+                            <td>@tetel.nev</td>
+                            <td>@tetel.mennyiseg @tetel.mertekegyseg</td>
+                            <td>@tetel.ar Ft</td>
+                            <td>@(tetel.ar * tetel.mennyiseg) Ft</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        <button class="btn btn-primary" @onclick="Nyomtat">Nyomtat</button>
+        <button class="btn btn-secondary" @onclick="VisszaNyugtanezet">Vissza</button>
+    }
+}
+
+@code {
+    private DateTime kezdet { get; set; }
+    private DateTime veg { get; set; }
+    private int keresNyugtaSorszam { get; set; }
+
+    private bool nyomtat = false;
+    private string nyugtaSzoveg;
+    private string nevSzuro { get; set; }
+
+    List<Nyugta> nyugtaLista = new List<Nyugta>();
+    List<Tetel> nyugtaTetelek = new List<Tetel>();
+    private bool nyugtaNezet = true;
+    private int megjelenitettNyugta = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        nevSzuro = "";
+        kezdet = new DateTime(2000, 01, 01);
+        veg = DateTime.Now.AddDays(1);
+
+        var client = new HttpClient();
+        client.BaseAddress = new Uri("http://localhost:5013/");
+        var response = await client.GetAsync("Nyugta");
+        if (response.IsSuccessStatusCode)
+        {
+            var responsString = await response.Content.ReadAsStringAsync();
+            nyugtaLista = JsonSerializer.Deserialize<List<Nyugta>>(responsString);
+        }
+    }
+
+    private void Reszletezes(int nyugtaszam)
+    {
+        megjelenitettNyugta = nyugtaszam;
+        if (nyugtaszam > 0)
+        {
+            var client = new HttpClient();
+            client.BaseAddress = new Uri("http://localhost:5013/");
+            var response = client.GetAsync($"Tetel/{nyugtaszam}").Result;
+            if (response.IsSuccessStatusCode)
+            {
+                var responseString = response.Content.ReadAsStringAsync().Result;
+                nyugtaTetelek = JsonSerializer.Deserialize<List<Tetel>>(responseString);
+            }
+        }
+        nyugtaNezet = false;
+    }
+
+    private void VisszaNyugtanezet()
+    {
+        nyugtaNezet = true;
+    }
+
+    private void Nyomtat()
+    {
+        StringBuilder builder = new StringBuilder(" --------------- NYUGTA --------------- \n");
+        int maxNev = nyugtaTetelek.Select(x => x.nev.Length).Max();
+        if (maxNev > 12)
+            maxNev = 12;
+        foreach(Tetel tetel in nyugtaTetelek)
+        {
+            if (tetel.nev.Length < maxNev)
+            {
+                builder.Append(tetel.nev);            
+            } else
+            {
+                builder.Append(tetel.nev.Substring(0, maxNev));
+            }
+
+            builder.Append(' ', maxNev-tetel.nev.Length+1);
+            if (tetel.mennyiseg < 10)
+                builder.Append(' ');
+            builder.Append(tetel.mennyiseg);
+
+            builder.Append(' ');
+            builder.Append(tetel.mertekegyseg);
+            builder.Append(" x ");
+
+            string arString = tetel.ar.ToString();
+
+            if(arString.Length < 4)
+            {
+                builder.Append(arString);
+            }
+            if (arString.Length == 4)
+            {
+                builder.Append(arString.Substring(0, 1));
+                builder.Append(' ');
+                builder.Append(arString.Substring(1, 3));
+            }
+            if (arString.Length == 5)
+            {
+                builder.Append(arString.Substring(0, 2));
+                builder.Append(' ');
+                builder.Append(arString.Substring(2, 3));
+            }
+
+            builder.Append(" Ft");
+
+            string osszarString = (tetel.mennyiseg * tetel.ar).ToString();
+
+            builder.Append(' ', 25 - (maxNev + arString.Length + osszarString.Length));
+
+            if (arString.Length <= 3)
+            {
+                builder.Append(' ');
+            }
+
+            if (osszarString.Length > 6)
+            {
+                builder.Append(osszarString.Substring(0, 1));
+                builder.Append(' ');
+                builder.Append(osszarString.Substring(1, 3));
+                builder.Append(' ');
+                builder.Append(osszarString.Substring(4, 3));
+            }
+            else if(osszarString.Length > 3)
+            {
+                builder.Append(' ');
+                builder.Append(osszarString.Substring(0, (osszarString.Length-3)));
+                builder.Append(' ');
+                builder.Append(osszarString.Substring((osszarString.Length - 3), 3));
+            }
+            else
+            {
+                builder.Append(' ', 2);
+                builder.Append(osszarString);
+            }
+
+            builder.Append("\n");
+        }
+        nyugtaSzoveg = builder.ToString();
+        nyomtat = true;
+    }
+
+    private void NyomtatasTorlese()
+    {
+        nyomtat = false;
+    }
+}

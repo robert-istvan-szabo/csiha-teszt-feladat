@@ -1,0 +1,137 @@
+﻿@page "/counter"
+@using Tesztfeladat.Entity.DTOs
+@using System.Text
+@using System.Text.Json
+@rendermode InteractiveServer
+
+<PageTitle>Új nyugta</PageTitle>
+
+
+@if (!nyugtaMentve)
+{    
+    <h1>Új nyugta</h1>
+}
+else
+{
+    <h1>A nyugta sikeresen elmentve!</h1>
+}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Sorsz</th>
+            <th>Nev</th>
+            <th>Mennyiseg</th>
+            <th>Mertekegyseg</th>
+            <th>Egységár</th>
+            <th>Bruttó Ár</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var tetel in tetels)
+        {
+            <tr>
+                <td>@tetel.sorszam</td>
+                <td>@tetel.nev</td>
+                <td>@tetel.mennyiseg</td>
+                <td>@tetel.mertekegyseg</td>
+                <td>@tetel.ar Ft</td>
+                <td>@(tetel.mennyiseg*tetel.ar)</td>
+                <td><button class="btn btn-danger" @onclick="@(e => Remove(tetel.sorszam))">Töröl</button></td>
+            </tr>
+        }
+        @if (sorszam < 100)
+        {
+            <tr>
+                <td>@sorszam</td>
+                <td><input type="text" @bind="Nev" @bind:event="oninput" /></td>
+                <td><input type="number" name="Mennyiseg" @bind="Mennyiseg" @bind:event="oninput" min="1" max="99" onkeyup="if(this.value > 99) this.value = null;" /></td>
+                <td><input type="text" name="Mertekegyseg" @bind="Mertekegyseg" @bind:event="oninput" maxlength ="2"/></td>
+                <td><input type="number" name="Ar" @bind="Ar" @bind:event="oninput" min="1" max="99999" onkeyup="if(this.value > 99999) this.value = null;" /></td>
+                <td>----</td>
+                <td><input class="btn btn-primary" type="submit" @onclick="AddToTetels" value="Ment" /></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary" @onclick="Kiallitas">Kiállítás</button>
+<button class="btn btn-danger" @onclick="Megszakit">Megszakítás</button>
+
+@code{
+    private string Nev { get; set; }
+    private int Mennyiseg { get; set; }
+    private string Mertekegyseg { get; set; }
+    private int Ar { get; set; }
+
+    List<Tetel> tetels = new List<Tetel>();
+
+    int sorszam = 1;
+    bool nyugtaMentve = false;
+
+    private void Takaritas()
+    {
+        Nev = "";
+        Mennyiseg = 0;
+        Mertekegyseg = "";
+        Ar = 0;
+    }
+
+    private void Megszakit()
+    {
+        tetels.Clear();
+        sorszam = 1;
+    }
+
+    private void Kiallitas()
+    {
+        var client = new HttpClient();
+        client.BaseAddress = new Uri("http://localhost:5013/");
+        var json = JsonSerializer.Serialize(tetels);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = client.PostAsync("nyugta", content).Result;
+
+        Takaritas();
+
+        if (response.IsSuccessStatusCode)
+        {
+            Megszakit();
+            nyugtaMentve = true;
+        }
+    }
+
+    private void AddToTetels()
+    {
+        nyugtaMentve = false;
+        Tetel tetel = new Tetel();
+        tetel.sorszam = sorszam;
+        tetel.nev = Nev;
+        tetel.mennyiseg = Mennyiseg;
+        tetel.mertekegyseg = Mertekegyseg;
+        tetel.ar = Ar;
+        sorszam++;
+        tetels.Add(tetel);
+        Takaritas();
+    }
+
+    private void Remove(int id)
+    {
+        var toRemove = tetels.Where(x => x.sorszam == id).First();
+        if (toRemove is not null)
+        {
+            tetels.Remove(toRemove);
+        }
+        SorszamJavitas();
+    }
+
+    private void SorszamJavitas()
+    {
+        int num = 1;
+        foreach(var tetel in tetels)
+        {
+            tetel.sorszam = num;
+            num++;
+        }
+        sorszam = num;
+    }
+}
+

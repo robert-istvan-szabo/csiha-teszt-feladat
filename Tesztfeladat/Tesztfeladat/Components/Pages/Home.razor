@@ -1,0 +1,69 @@
+﻿@page "/"
+@using Tesztfeladat.Entity.DTOs;
+@using System.Text.Json
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+
+<PageTitle>Bejelentkezes</PageTitle>
+
+<h1>Nyugtát egyszerűen!</h1>
+
+@if (!sikeresBejelentkezes)
+{
+    <label>Felhasználónév:</label>
+    <br />
+    <input type="text" @bind="bejelentkezo.UserName" @bind:event="oninput" readonly/>
+    <br />
+    <label>Jelszó:</label>
+    <br />
+    <input type="password" name="Mennyiseg" @bind="bejelentkezo.jelszo" @bind:event="oninput" readonly />
+    <br/>
+    @if (rosszAdat)
+    {    
+        <p>Felhasználónév vagy jelszó nem megfelelő</p>
+    }
+    <button class="btn btn-primary" @onclick="Bejelentkezes">Bejelentkezes</button>
+}
+else
+{
+    <h2>Üdvözöljük @bejelentkezo.UserName</h2>
+    <button class="btn btn-danger" @onclick="Kiejelentkezes">Kijelentkezes</button>
+}
+
+@code {
+    public Felhasznalo bejelentkezo = new Felhasznalo();
+
+    private bool rosszAdat = false;
+    private bool sikeresBejelentkezes = false;
+
+    private void Bejelentkezes()
+    {
+        bejelentkezo.Email = "";
+        rosszAdat = false;
+        var client = new HttpClient();
+        client.BaseAddress = new Uri("http://localhost:5013/");
+
+        var json = JsonSerializer.Serialize(bejelentkezo);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        var response = client.PostAsync("Felhasznalo/bejelentkezes", content).Result;
+        if (response.IsSuccessStatusCode)
+        {
+            var responsString = response.Content.ReadAsStringAsync().Result;
+            bejelentkezo = JsonSerializer.Deserialize<Felhasznalo>(responsString);
+            sikeresBejelentkezes = true;
+        }
+        else
+        {
+            rosszAdat = true;
+        }
+    }
+
+    private void Kiejelentkezes()
+    {
+        rosszAdat = false;
+        sikeresBejelentkezes = false;
+        bejelentkezo = new Felhasznalo();
+    }
+}
