@@ -134,30 +134,13 @@ else
         kezdet = new DateTime(2000, 01, 01);
         veg = DateTime.Now.AddDays(1);
 
-        var cookieHandler = new HttpClientHandler();
-        var cookieClient = new HttpClient(cookieHandler);
-
-        var cookieContainer = new CookieContainer();
-
-        var cookieResponse = cookieClient.GetAsync("http://localhost:5013/").Result;
-        cookieResponse.EnsureSuccessStatusCode();
-
-        var cookies = cookieHandler.CookieContainer.GetCookies(new Uri("http://localhost:5013/"));
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:5013/Nyugta");
-        foreach (Cookie cookie in cookies)
-        {
-            Console.WriteLine(cookie.Name);
-            cookieContainer.Add(cookie);
-            request.Headers.Add("Cookie", cookie.ToString());
-        }
 
-        var handler = new HttpClientHandler 
-            {
-                CookieContainer = cookieContainer,
-                UseCookies = true
-            };
+        var handler = new HttpClientHandler(); 
         var client = new HttpClient(handler);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Home.token.accessToken);
 
         var response = await client.SendAsync(request);
 
