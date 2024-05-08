@@ -19,7 +19,7 @@ namespace Tesztfeladat.Repositorys
             using (var connection = new NpgsqlConnection(connectionString))
             {
 
-                using (var command = new NpgsqlCommand("INSERT INTO tesztfeladat.\"Nyugta\" (\"Letrehozas\",\"Osszeg\")" +
+                using (var command = new NpgsqlCommand("INSERT INTO public.\"Nyugta\" (\"Letrehozas\",\"Osszeg\")" +
                     "VALUES(@letrehozas,@osszeg)"))
                 {
                     command.Parameters.AddWithValue("@letrehozas", NpgsqlTypes.NpgsqlDbType.Timestamp, nyugta.Letrehozas);
@@ -35,7 +35,7 @@ namespace Tesztfeladat.Repositorys
                     }
                 }
 
-                using (var command = new NpgsqlCommand($"SELECT \"Azonosito\" FROM tesztfeladat.\"Nyugta\" WHERE \"Letrehozas\" = @letrehozas AND \"Osszeg\" = @osszeg"))
+                using (var command = new NpgsqlCommand($"SELECT \"Azonosito\" FROM public.\"Nyugta\" WHERE \"Letrehozas\" = @letrehozas AND \"Osszeg\" = @osszeg"))
                 {
                     command.Parameters.AddWithValue("@letrehozas", NpgsqlTypes.NpgsqlDbType.Timestamp, nyugta.Letrehozas);
                     command.Parameters.AddWithValue("@osszeg", NpgsqlTypes.NpgsqlDbType.Integer, nyugta.Osszeg);
@@ -61,7 +61,7 @@ namespace Tesztfeladat.Repositorys
             {
                 connection.Open();
 
-                using (var command = new NpgsqlCommand("SELECT \"Azonosito\",\"Letrehozas\",\"Osszeg\" FROM tesztfeladat.\"Nyugta\"", connection))
+                using (var command = new NpgsqlCommand("SELECT \"Azonosito\",\"Letrehozas\",\"Osszeg\" FROM public.\"Nyugta\"", connection))
                 {
                     command.Connection = connection;
 

@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Tesztfeladat.Interfaces;
 using Tesztfeladat.Interfaces.Repository;
 
 namespace Tesztfeladat.Controller
 {
     [Route("/Tetel")]
     [ApiController]
-    //[Authorize]
     public class TetelController : ControllerBase
     {
         private ITetelRepository tetelRepository;
@@ -19,9 +20,18 @@ namespace Tesztfeladat.Controller
 
         [HttpGet("{nyugtaId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize]
         public IActionResult NyugtaTetelei([FromRoute]int nyugtaId)
         {
+            //logger.LogInformation("Bejelentkezes ellenorzese");
+            //if (String.IsNullOrEmpty(userManager.GetUsername()))
+            //{
+            //    logger.LogError("Nincs bejelentkezett felhasznalo");
+            //    return Unauthorized("Nincs bejelentkezett felhasznalo");
+            //}
+
             logger.LogInformation("Nyugta tételeinek lekérdezése");
             try
             {

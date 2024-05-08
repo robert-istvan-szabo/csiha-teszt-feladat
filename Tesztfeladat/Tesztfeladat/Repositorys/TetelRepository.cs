@@ -20,7 +20,7 @@ namespace Tesztfeladat.Repositorys
             {
                 connection.Open();
 
-                using (var command = new NpgsqlCommand("INSERT INTO tesztfeladat.\"Tetel\" (\"Nyugta\",\"Mennyises\",\"Mertekegyseg\",\"Ar\",\"Sorszam\", \"Nev\")" +
+                using (var command = new NpgsqlCommand("INSERT INTO public.\"Tetel\" (\"Nyugta\",\"Mennyises\",\"Mertekegyseg\",\"Ar\",\"Sorszam\", \"Nev\")" +
                     $"VALUES ({tetel.Nyugta},{tetel.Mennyiseg},'{tetel.Mertekegyseg}',{tetel.Ar}, {tetel.Sorszam},'{tetel.Nev}')"))
                 {
                     command.Connection = connection;
@@ -42,7 +42,7 @@ namespace Tesztfeladat.Repositorys
             int result;
             using (var connection = new NpgsqlConnection(connectionString))
             {
-                StringBuilder sql = new StringBuilder("INSERT INTO tesztfeladat.\"Tetel\" (\"Nyugta\",\"Mennyiseg\",\"Mertekegyseg\",\"Ar\",\"Sorszam\",\"Nev\")\n VALUES");
+                StringBuilder sql = new StringBuilder("INSERT INTO public.\"Tetel\" (\"Nyugta\",\"Mennyiseg\",\"Mertekegyseg\",\"Ar\",\"Sorszam\",\"Nev\")\n VALUES");
                 bool first = true;
                 foreach (var tetel in tetelList)
                 {
@@ -82,7 +82,7 @@ namespace Tesztfeladat.Repositorys
             {
                 connection.Open();
 
-                using (var command = new NpgsqlCommand("SELECT * FROM tesztfeladat.\"Tetel\""))
+                using (var command = new NpgsqlCommand("SELECT * FROM public.\"Tetel\""))
                 {
                     command.Connection = connection;
 
@@ -114,7 +114,7 @@ namespace Tesztfeladat.Repositorys
             {
                 connection.Open();
 
-                using (var command = new NpgsqlCommand($"SELECT * FROM tesztfeladat.\"Tetel\" WHERE \"Nyugta\" = {nyugtaszam}"))
+                using (var command = new NpgsqlCommand($"SELECT * FROM public.\"Tetel\" WHERE \"Nyugta\" = {nyugtaszam}"))
                 {
                     command.Connection = connection;
 

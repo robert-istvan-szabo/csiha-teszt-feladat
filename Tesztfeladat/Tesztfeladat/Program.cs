@@ -4,6 +4,8 @@ using Tesztfeladat.Interfaces.Repository;
 using Tesztfeladat.Interfaces.Service;
 using Tesztfeladat.Repositorys;
 using Tesztfeladat.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,19 +17,34 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "tesztfeladat", Version = "v1" });
 });
 
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".tesztfeladat.Session";
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.IsEssential = true;
+});
+
+
 builder.Services.AddLogging(logging =>
 {
     logging.SetMinimumLevel(LogLevel.Debug);
     logging.AddConsole();
 });
 
-builder.Services.AddSingleton<IFelhasznaloRepository, FelhasznaloRepository>();
 builder.Services.AddSingleton<INyugtaRepository, NyugtaRepository>();
 builder.Services.AddSingleton<ITetelRepository, TetelRepository>();
 
-builder.Services.AddSingleton<IFelhasznaloService, FelhasznaloService>();
-builder.Services.AddScoped<INyugtaService, NyugtaService>();
+builder.Services.AddSingleton<INyugtaService, NyugtaService>();
+
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<UserDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreConnectionString"));
+});
+
+builder.Services.AddAuthorization();
+builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<UserDbContext>();
 
 var app = builder.Build();
 
@@ -37,8 +54,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseAuthentication();
-app.UseAuthorization();
+app.MapIdentityApi<IdentityUser>();
+
+app.UseAuthorization().UseCookiePolicy();
+app.UseAuthentication().UseCookiePolicy();
+
+app.UseSession();
 
 app.UseSwagger();
 
@@ -58,3 +79,4 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+

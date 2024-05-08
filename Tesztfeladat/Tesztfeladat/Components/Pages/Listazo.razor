@@ -1,9 +1,12 @@
 ﻿@page "/weather"
 @using System.Text.Json
 @using System.Text
+@using System.Net
+@using System.Net.Http.Headers
 @using Tesztfeladat.Entity.DTOs
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
 
 <PageTitle>Mentett nyugtak</PageTitle>
 
@@ -131,9 +134,33 @@ else
         kezdet = new DateTime(2000, 01, 01);
         veg = DateTime.Now.AddDays(1);
 
-        var client = new HttpClient();
-        client.BaseAddress = new Uri("http://localhost:5013/");
-        var response = await client.GetAsync("Nyugta");
+        var cookieHandler = new HttpClientHandler();
+        var cookieClient = new HttpClient(cookieHandler);
+
+        var cookieContainer = new CookieContainer();
+
+        var cookieResponse = cookieClient.GetAsync("http://localhost:5013/").Result;
+        cookieResponse.EnsureSuccessStatusCode();
+
+        var cookies = cookieHandler.CookieContainer.GetCookies(new Uri("http://localhost:5013/"));
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:5013/Nyugta");
+        foreach (Cookie cookie in cookies)
+        {
+            Console.WriteLine(cookie.Name);
+            cookieContainer.Add(cookie);
+            request.Headers.Add("Cookie", cookie.ToString());
+        }
+
+        var handler = new HttpClientHandler 
+            {
+                CookieContainer = cookieContainer,
+                UseCookies = true
+            };
+        var client = new HttpClient(handler);
+
+        var response = await client.SendAsync(request);
+
         if (response.IsSuccessStatusCode)
         {
             var responsString = await response.Content.ReadAsStringAsync();

@@ -3,6 +3,7 @@
 @using System.Text.Json
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
 
 
 <PageTitle>Bejelentkezes</PageTitle>
@@ -11,13 +12,13 @@
 
 @if (!sikeresBejelentkezes)
 {
-    <label>Felhasználónév:</label>
+    <label>Email:</label>
     <br />
-    <input type="text" @bind="bejelentkezo.UserName" @bind:event="oninput" readonly/>
+    <input type="text" @bind="request.email" @bind:event="oninput" />
     <br />
     <label>Jelszó:</label>
     <br />
-    <input type="password" name="Mennyiseg" @bind="bejelentkezo.jelszo" @bind:event="oninput" readonly />
+    <input type="password" name="Mennyiseg" @bind="request.password" @bind:event="oninput" />
     <br/>
     @if (rosszAdat)
     {    
@@ -27,31 +28,47 @@
 }
 else
 {
-    <h2>Üdvözöljük @bejelentkezo.UserName</h2>
+    <h2>Üdvözöljük @request.email</h2>
     <button class="btn btn-danger" @onclick="Kiejelentkezes">Kijelentkezes</button>
 }
 
 @code {
-    public Felhasznalo bejelentkezo = new Felhasznalo();
+    public class Token
+    {
+        public string tokenType { get; set; }
+        public string accessToken { get; set; }
+        public int expiresIn { get; set; }
+        public string refreshToken { get; set; }
+    }
+
+    private class Request
+    {
+        public string email { get; set; }
+        public string password { get; set; }
+    };
+
+    Request request = new Request();
+
+    public Token token = new Token();
 
     private bool rosszAdat = false;
     private bool sikeresBejelentkezes = false;
 
     private void Bejelentkezes()
     {
-        bejelentkezo.Email = "";
         rosszAdat = false;
         var client = new HttpClient();
         client.BaseAddress = new Uri("http://localhost:5013/");
 
-        var json = JsonSerializer.Serialize(bejelentkezo);
+        var json = JsonSerializer.Serialize(request);
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-        var response = client.PostAsync("Felhasznalo/bejelentkezes", content).Result;
+        var response = client.PostAsync("login", content).Result;
         if (response.IsSuccessStatusCode)
         {
             var responsString = response.Content.ReadAsStringAsync().Result;
-            bejelentkezo = JsonSerializer.Deserialize<Felhasznalo>(responsString);
+            token = JsonSerializer.Deserialize<Token>(responsString);
+            JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "accessToken", token.accessToken);
             sikeresBejelentkezes = true;
         }
         else
@@ -64,6 +81,6 @@ else
     {
         rosszAdat = false;
         sikeresBejelentkezes = false;
-        bejelentkezo = new Felhasznalo();
+        request = new Request();
     }
 }
