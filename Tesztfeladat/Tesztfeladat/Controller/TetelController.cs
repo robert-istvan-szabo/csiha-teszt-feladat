@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Tesztfeladat.Interfaces;
+﻿using Microsoft.AspNetCore.Mvc;
 using Tesztfeladat.Interfaces.Repository;
 
 namespace Tesztfeladat.Controller
@@ -22,16 +20,8 @@ namespace Tesztfeladat.Controller
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [Authorize]
         public IActionResult NyugtaTetelei([FromRoute]int nyugtaId)
         {
-            //logger.LogInformation("Bejelentkezes ellenorzese");
-            //if (String.IsNullOrEmpty(userManager.GetUsername()))
-            //{
-            //    logger.LogError("Nincs bejelentkezett felhasznalo");
-            //    return Unauthorized("Nincs bejelentkezett felhasznalo");
-            //}
-
             logger.LogInformation("Nyugta tételeinek lekérdezése");
             try
             {

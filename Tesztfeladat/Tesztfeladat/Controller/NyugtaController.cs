@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Tesztfeladat.Entity.DTOs;
 using Tesztfeladat.Interfaces.Service;
 using Tesztfeladat.Validators;
@@ -9,7 +7,6 @@ namespace Tesztfeladat.Controller
 {
     [Route("/Nyugta")]
     [ApiController]
-    [Authorize]
     public class NyugtaController : ControllerBase
     {
         private INyugtaService nyugtaService;
@@ -26,13 +23,6 @@ namespace Tesztfeladat.Controller
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult NyugtakLekerdezes()
         {
-            //logger.LogInformation("Bejelentkezes ellenorzese");
-            //if (String.IsNullOrEmpty(userManager.GetUsername()))
-            //{
-            //    logger.LogError("Nincs bejelentkezett felhasznalo");
-            //    return Unauthorized("Nincs bejelentkezett felhasznalo");
-            //}
-
             logger.LogInformation("Nyugták lekérdezése elindult");
             var data = nyugtaService.GetAll();
             return Ok(data);
@@ -44,13 +34,6 @@ namespace Tesztfeladat.Controller
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult NyugtaLetrehozasa([FromBody] IEnumerable<Tetel> tetels)
         {
-            //logger.LogInformation("Bejelentkezes ellenorzese");
-            //if (String.IsNullOrEmpty(userManager.GetUsername()))
-            //{
-            //    logger.LogError("Nincs bejelentkezett felhasznalo");
-            //    return Unauthorized("Nincs bejelentkezett felhasznalo");
-            //}
-            
             logger.LogInformation("Nyugta létrehozása elindult");
             var validationResult = TetelValidator.Validation(tetels);
             if (validationResult == TetelValidator.valid)

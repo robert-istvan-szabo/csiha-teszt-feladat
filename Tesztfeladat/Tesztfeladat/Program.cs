@@ -24,7 +24,6 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-
 builder.Services.AddLogging(logging =>
 {
     logging.SetMinimumLevel(LogLevel.Debug);

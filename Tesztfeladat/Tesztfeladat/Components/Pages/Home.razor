@@ -14,11 +14,11 @@
 {
     <label>Email:</label>
     <br />
-    <input type="text" @bind="request.email" @bind:event="oninput" />
+    <input type="text" @bind="request.email" @bind:event="oninput" readonly/>
     <br />
     <label>Jelszó:</label>
     <br />
-    <input type="password" name="Mennyiseg" @bind="request.password" @bind:event="oninput" />
+    <input type="password" name="Mennyiseg" @bind="request.password" @bind:event="oninput" readonly/>
     <br/>
     @if (rosszAdat)
     {    
